@@ -1,46 +1,41 @@
-import smtplib
-import time
 import os
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
 
-# Email configuration
-sender_email = os.environ.get('')
-sender_password = os.environ.get('')
-receiver_email = 'ceo@creativenetworklive.com'
-subject = 'Payment Reminder'
-body_template = 'Hello ,\n\nYou owe me ${}.\n\nRegards,\nYour Friend'
+# Calculate the debt amount based on the number of days since the script was last run
+def calculate_debt_amount(initial_debt, debt_increment, days_passed):
+    return initial_debt + (debt_increment * days_passed)
 
-# Amount configuration
-initial_amount = 21000
-amount_increase = 21000
+# Example usage
+initial_debt = 120000
+debt_increment = 21000
+days_passed = 0
 
-# SMTP server configuration (Gmail)
-smtp_server = 'smtp.gmail.com'
-smtp_port = 587
+# Check if debt information is stored in a file
+if os.path.exists('debt.txt'):
+    with open('debt.txt', 'r') as file:
+        days_passed = int(file.read())
 
-# Function to send the email
-def send_email(amount):
-    # Compose the email message
-    body = body_template.format(amount)
+# Calculate the current debt amount
+current_debt = calculate_debt_amount(initial_debt, debt_increment, days_passed)
 
-    # Connect to the SMTP server
-    with smtplib.SMTP(smtp_server, smtp_port) as server:
-        server.starttls()
-        server.login(sender_email, sender_password)
+# Create the email message
+message = Mail(
+    from_email='ceo@creativenetworklive.com',
+    to_emails='sbstnbnvdsa@gmail.com',
+    subject='You owe me $$$$',
+    html_content=f'<strong>You owe me ${current_debt}</strong>')
 
-        # Send the email
-        message = f'Subject: {subject}\n\n{body}'
-        server.sendmail(sender_email, receiver_email, message)
+try:
+    sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
+    response = sg.send(message)
+    print(response.status_code)
+    print(response.body)
+    print(response.headers)
+except Exception as e:
+    print(e.message)
 
-        # Print a confirmation message
-        print(f"Email sent: Owed amount is ${amount}")
-
-# Main loop
-while True:
-    # Calculate the current owed amount
-    current_amount = initial_amount + (amount_increase * ((time.time() - time.mktime(time.gmtime(0))) // (24 * 3600)))
-
-    # Send the email
-    send_email(current_amount)
-
-    # Wait for 24 hours
-    time.sleep(24 * 3600)
+# Update the number of days passed and store it in the file
+days_passed += 1
+with open('debt.txt', 'w') as file:
+    file.write(str(days_passed))
