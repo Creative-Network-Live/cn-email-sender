@@ -1,4 +1,5 @@
 import os
+import tkinter as tk
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 
@@ -6,36 +7,68 @@ from sendgrid.helpers.mail import Mail
 def calculate_debt_amount(initial_debt, debt_increment, days_passed):
     return initial_debt + (debt_increment * days_passed)
 
-# Example usage
-initial_debt = 120000
-debt_increment = 21000
-days_passed = 0
+def send_email():
+    # Read the input values from the GUI
+    sender_email = sender_entry.get()
+    recipient_email = recipient_entry.get()
+    initial_debt = int(initial_debt_entry.get())
+    debt_increment = int(debt_increment_entry.get())
 
-# Check if debt information is stored in a file
-if os.path.exists('debt.txt'):
-    with open('debt.txt', 'r') as file:
-        days_passed = int(file.read())
+    # Validate inputs
+    if not sender_email or not recipient_email:
+        result_label.config(text='Sender and recipient email are required.')
+        return
 
-# Calculate the current debt amount
-current_debt = calculate_debt_amount(initial_debt, debt_increment, days_passed)
+    # Calculate the current debt amount
+    current_debt = calculate_debt_amount(initial_debt, debt_increment, 0)
 
-# Create the email message
-message = Mail(
-    from_email='ceo@creativenetworklive.com',
-    to_emails='sbstnbnvdsa@gmail.com',
-    subject='You owe me $$$$',
-    html_content=f'<strong>You owe me ${current_debt}</strong>')
+    # Create the email message
+    message = Mail(
+        from_email=sender_email,
+        to_emails=recipient_email,
+        subject='You owe me $$$$',
+        html_content=f'<strong>You owe me ${current_debt}</strong>')
 
-try:
-    sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
-    response = sg.send(message)
-    print(response.status_code)
-    print(response.body)
-    print(response.headers)
-except Exception as e:
-    print(e.message)
+    try:
+        sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
+        response = sg.send(message)
+        result_label.config(text='Email sent successfully!')
+    except Exception as e:
+        result_label.config(text='Error sending email: ' + str(e))
 
-# Update the number of days passed and store it in the file
-days_passed += 1
-with open('debt.txt', 'w') as file:
-    file.write(str(days_passed))
+# Create the Tkinter window
+window = tk.Tk()
+window.title('Debt Collector')
+window.geometry('300x250')
+
+# Create and position the input fields
+sender_label = tk.Label(window, text='Sender Email:')
+sender_label.pack()
+sender_entry = tk.Entry(window)
+sender_entry.pack()
+
+recipient_label = tk.Label(window, text='Recipient Email:')
+recipient_label.pack()
+recipient_entry = tk.Entry(window)
+recipient_entry.pack()
+
+initial_debt_label = tk.Label(window, text='Initial Debt:')
+initial_debt_label.pack()
+initial_debt_entry = tk.Entry(window)
+initial_debt_entry.pack()
+
+debt_increment_label = tk.Label(window, text='Debt Increment:')
+debt_increment_label.pack()
+debt_increment_entry = tk.Entry(window)
+debt_increment_entry.pack()
+
+# Create the send button
+send_button = tk.Button(window, text='Send Email', command=send_email)
+send_button.pack()
+
+# Create the label to display the result
+result_label = tk.Label(window, text='')
+result_label.pack()
+
+# Run the Tkinter event loop
+window.mainloop()
