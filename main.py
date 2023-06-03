@@ -33,7 +33,7 @@ def send_email():
 # Create the Tkinter window
 window = tk.Tk()
 window.title('Email Sender')
-window.geometry('400x400')
+window.geometry('600x600')
 
 # Create and position the input fields
 sender_label = tk.Label(window, text='Sender Email:')
